@@ -1,0 +1,7 @@
+{
+  "LLM_clientId": "sb-2fc43eae-c941-47a9-b523-644716487e45!b88862|xsuaa_std!b77089",
+  "LLM_clientSecret": "9d9ca943-e96a-4eb2-a6c0-467b513d1d10$sm8_cVmSEqgm19t7B4lhSgGOiCp-oVeERp01wR6uAg0=",
+  "LLM_tokenUrl": "https://cf-uki-innovation-lab-eb1in1ep.authentication.sap.hana.ondemand.com/oauth/token",
+  "Gemini-2.5-pro": "https://api.ai.internalprod.eu-central-1.aws.ml.hana.ondemand.com/v2/inference/deployments/dda75dcb815ee217/models/gemini-2.5-pro:generateContent",
+  "Gemini-2.5-flash": "https://api.ai.internalprod.eu-central-1.aws.ml.hana.ondemand.com/v2/inference/deployments/dbb5bc3a2b51f7ea/models/gemini-2.5-flash:generateContent",
+}
