@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SAP CLM AI</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --sap-blue:    #0070F2;
+    --sap-dark:    #32363A;
+    --sap-shell:   #354A5E;
+    --sap-bg:      #F5F6F7;
+    --sap-white:   #FFFFFF;
+    --sap-border:  #D9D9D9;
+    --sap-green:   #107E3E;
+    --sap-yellow:  #E9730C;
+    --sap-red:     #BB0000;
+    --sap-green-bg:#F1FAF6;
+    --sap-yellow-bg:#FEF7F1;
+    --sap-red-bg:  #FFEAEA;
+    --sap-text:    #32363A;
+    --sap-muted:   #6A6D70;
+    --radius:      8px;
+    --shadow:      0 2px 8px rgba(0,0,0,0.10);
+  }
+  body { font-family: "72", "72full", Arial, sans-serif; background: var(--sap-bg); color: var(--sap-text); min-height: 100vh; }
+
+  /* Shell */
+  .shell { background: var(--sap-shell); color: #fff; height: 44px; display: flex; align-items: center; padding: 0 1rem; gap: 14px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 4px rgba(0,0,0,0.18); }
+  .shell-logo { font-size: 13px; font-weight: 700; letter-spacing: 0.5px; }
+  .shell-title { font-size: 14px; font-weight: 400; letter-spacing: 0.1px; color: rgba(255,255,255,0.95); }
+  .shell-title strong { font-weight: 700; }
+  .shell-sep { width: 1px; height: 18px; background: rgba(255,255,255,0.3); }
+  .shell-spacer { flex: 1; }
+  .shell-user { font-size: 12px; color: rgba(255,255,255,0.7); display: flex; align-items: center; gap: 8px; }
+  .shell-avatar { width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+
+  /* Nav — Fiori icon-tab-bar style */
+  .nav { background: var(--sap-white); border-bottom: 1px solid #D1D1D1; display: flex; padding: 0 1rem; }
+  .nav-tab { padding: 0 20px; height: 44px; font-size: 14px; cursor: pointer; border-bottom: 3px solid transparent; color: #6A6D70; transition: color 0.12s, border-color 0.12s; display: flex; align-items: center; gap: 6px; white-space: nowrap; user-select: none; }
+  .nav-tab:hover { color: var(--sap-dark); background: #F5F6F7; }
+  .nav-tab.active { color: var(--sap-blue); border-bottom-color: var(--sap-blue); font-weight: 600; background: transparent; }
+  .nav-count { background: var(--sap-blue); color: #fff; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 10px; }
+  .nav-count.red { background: var(--sap-red); }
+
+  /* Pages */
+  .page { display: none; padding: 1.25rem 1.5rem; max-width: 1140px; margin: 0 auto; }
+  .page.active { display: block; }
+  .page-title { font-size: 1.125rem; font-weight: 700; margin-bottom: 1.25rem; color: var(--sap-dark); letter-spacing: -0.01em; }
+
+  /* Cards — flat Fiori style */
+  .card { background: var(--sap-white); border: 1px solid #E0E0E0; border-radius: 4px; padding: 1.125rem 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .card + .card { margin-top: 10px; }
+
+  /* Badges */
+  .badge { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+  .badge-green  { background: var(--sap-green-bg);  color: var(--sap-green); }
+  .badge-yellow { background: var(--sap-yellow-bg); color: var(--sap-yellow); }
+  .badge-red    { background: var(--sap-red-bg);    color: var(--sap-red); }
+  .badge-blue   { background: #EAF2FE; color: var(--sap-blue); }
+  .badge-gray   { background: #F4F4F4; color: var(--sap-muted); }
+
+  /* KPIs */
+  .kpi-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+  .kpi-card { background: var(--sap-white); border: 1px solid var(--sap-border); border-radius: var(--radius); padding: 16px 20px; box-shadow: var(--shadow); }
+  .kpi-value { font-size: 26px; font-weight: 700; color: var(--sap-blue); }
+  .kpi-label { font-size: 12px; color: var(--sap-muted); margin-top: 2px; }
+
+  /* Buttons */
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: var(--radius); font-size: 14px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; }
+  .btn-primary { background: var(--sap-blue); color: #fff; }
+  .btn-primary:hover:not(:disabled) { background: #0058C9; }
+  .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
+  .btn-secondary { background: var(--sap-white); color: var(--sap-blue); border: 1.5px solid var(--sap-blue); }
+  .btn-secondary:hover { background: #EAF2FE; }
+  .btn-ghost { background: transparent; color: var(--sap-muted); border: 1.5px solid var(--sap-border); }
+  .btn-ghost:hover { background: var(--sap-bg); }
+  .btn-danger { background: var(--sap-red); color: #fff; }
+  .btn-sm { padding: 5px 11px; font-size: 12px; }
+
+  /* Deal rows */
+  .deal-row { background: var(--sap-white); border: 1px solid var(--sap-border); border-radius: var(--radius); padding: 16px 20px; display: flex; align-items: center; gap: 16px; box-shadow: var(--shadow); transition: border-color 0.15s; }
+  .deal-row:hover { border-color: var(--sap-blue); }
+  .deal-row + .deal-row { margin-top: 10px; }
+  .deal-name { font-size: 15px; font-weight: 600; }
+  .deal-sub  { font-size: 12px; color: var(--sap-muted); margin-top: 2px; }
+  .deal-value { font-size: 16px; font-weight: 700; min-width: 90px; text-align: right; }
+  .deal-spacer { flex: 1; }
+  .deal-actions { display: flex; gap: 8px; }
+
+  /* Dots */
+  .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+  .dot-green  { background: var(--sap-green); }
+  .dot-yellow { background: var(--sap-yellow); }
+  .dot-red    { background: var(--sap-red); }
+
+  /* Form */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group.full { grid-column: 1 / -1; }
+  label { font-size: 13px; font-weight: 600; color: var(--sap-dark); }
+  input, select { border: 1px solid var(--sap-border); border-radius: 6px; padding: 9px 12px; font-size: 14px; color: var(--sap-text); background: var(--sap-white); outline: none; transition: border 0.15s; }
+  input:focus, select:focus { border-color: var(--sap-blue); }
+  .input-tag { font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 4px; margin-left: 6px; background: #EAF2FE; color: var(--sap-blue); }
+
+  /* Divider */
+  .section-divider { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--sap-muted); margin: 20px 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--sap-border); }
+
+  /* AI box */
+  .ai-box { background: #EAF2FE; border-left: 3px solid var(--sap-blue); border-radius: 0 var(--radius) var(--radius) 0; padding: 12px 16px; font-size: 13px; margin: 16px 0; color: var(--sap-dark); line-height: 1.6; }
+  .ai-box strong { color: var(--sap-blue); }
+
+  /* Progress */
+  .generating { display: none; align-items: center; gap: 12px; padding: 14px 20px; background: #EAF2FE; border-radius: var(--radius); font-size: 14px; color: var(--sap-blue); font-weight: 600; margin-top: 16px; }
+  .generating.show { display: flex; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner { width: 20px; height: 20px; border: 3px solid #c0d8f7; border-top-color: var(--sap-blue); border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
+
+  /* Review layout */
+  .review-layout { display: grid; grid-template-columns: 220px 1fr; gap: 16px; }
+
+  /* Clause list */
+  .clause-list { display: flex; flex-direction: column; gap: 4px; }
+  .clause-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; transition: background 0.12s; border: 1px solid transparent; }
+  .clause-item:hover { background: var(--sap-bg); }
+  .clause-item.active { background: #EAF2FE; border-color: var(--sap-blue); font-weight: 600; color: var(--sap-blue); }
+  .clause-num { font-size: 11px; color: var(--sap-muted); min-width: 24px; }
+
+  /* Clause detail */
+  .clause-panel-title { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+  .clause-panel-sub { font-size: 12px; color: var(--sap-muted); margin-bottom: 16px; }
+  .clause-text { background: var(--sap-bg); border: 1px solid var(--sap-border); border-radius: var(--radius); padding: 14px 16px; font-size: 13px; line-height: 1.7; margin-bottom: 16px; white-space: pre-wrap; }
+  .risk-panel { border-radius: var(--radius); padding: 14px 16px; margin-bottom: 16px; font-size: 13px; line-height: 1.7; }
+  .risk-panel.red    { background: var(--sap-red-bg);    border-left: 4px solid var(--sap-red); }
+  .risk-panel.yellow { background: var(--sap-yellow-bg); border-left: 4px solid var(--sap-yellow); }
+  .risk-panel.green  { background: var(--sap-green-bg);  border-left: 4px solid var(--sap-green); }
+  .risk-panel-title { font-weight: 700; font-size: 14px; margin-bottom: 6px; }
+  .risk-panel.red .risk-panel-title    { color: var(--sap-red); }
+  .risk-panel.yellow .risk-panel-title { color: var(--sap-yellow); }
+  .risk-panel.green .risk-panel-title  { color: var(--sap-green); }
+
+  .recommendation-box { background: var(--sap-white); border: 1px solid var(--sap-border); border-radius: var(--radius); padding: 14px 16px; font-size: 13px; margin-bottom: 16px; }
+  .recommendation-box h4 { font-size: 13px; font-weight: 700; margin-bottom: 8px; color: var(--sap-blue); }
+  .rec-text { background: #EAF2FE; border-radius: 6px; padding: 10px 12px; line-height: 1.6; margin-bottom: 10px; font-size: 13px; white-space: pre-wrap; }
+  .clause-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  /* Thinking state for clause panel */
+  .thinking { display: flex; align-items: center; gap: 10px; color: var(--sap-muted); font-size: 13px; padding: 20px 0; }
+
+  /* Risk summary */
+  .risk-summary { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: var(--radius); background: var(--sap-white); border: 1px solid var(--sap-border); margin-top: 16px; font-size: 13px; }
+  .risk-score-num { font-size: 22px; font-weight: 800; }
+  .risk-score-num.red    { color: var(--sap-red); }
+  .risk-score-num.yellow { color: var(--sap-yellow); }
+  .risk-score-num.green  { color: var(--sap-green); }
+
+  /* Approval */
+  .approval-steps { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+  .approval-step { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: var(--radius); background: var(--sap-white); border: 1px solid var(--sap-border); font-size: 13px; }
+  .approval-name { font-weight: 600; }
+  .approval-role { font-size: 11px; color: var(--sap-muted); }
+
+  /* Toast */
+  #toast { position: fixed; bottom: 24px; right: 24px; background: var(--sap-dark); color: #fff; padding: 12px 20px; border-radius: var(--radius); font-size: 14px; z-index: 999; transform: translateY(80px); opacity: 0; transition: all 0.3s; pointer-events: none; max-width: 360px; }
+  #toast.show { transform: translateY(0); opacity: 1; }
+
+  /* Notification popup */
+  #notif {
+    position: fixed; top: 64px; right: 24px; z-index: 200;
+    background: var(--sap-white); border: 1px solid var(--sap-border);
+    border-left: 4px solid var(--sap-yellow);
+    border-radius: var(--radius); box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    padding: 14px 16px; width: 300px;
+    transform: translateX(340px); opacity: 0;
+    transition: all 0.35s cubic-bezier(0.34, 1.2, 0.64, 1);
+    pointer-events: none;
+  }
+  #notif.show { transform: translateX(0); opacity: 1; pointer-events: auto; }
+  .notif-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .joule-avatar {
+    width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(135deg, #0070F2 0%, #8B5CF6 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; box-shadow: 0 2px 8px rgba(0,112,242,0.35);
+  }
+  .joule-label { font-size: 11px; font-weight: 700; color: var(--sap-blue); text-transform: uppercase; letter-spacing: 0.6px; }
+  .joule-name  { font-size: 13px; font-weight: 700; color: var(--sap-dark); }
+  .notif-title  { font-size: 13px; font-weight: 700; color: var(--sap-yellow); display: flex; align-items: center; gap: 6px; }
+  .notif-close  { background: none; border: none; cursor: pointer; color: var(--sap-muted); font-size: 16px; line-height: 1; padding: 0 2px; }
+  .notif-close:hover { color: var(--sap-dark); }
+  .notif-body   { font-size: 13px; color: var(--sap-dark); line-height: 1.5; margin-bottom: 12px; }
+  .notif-meta   { font-size: 11px; color: var(--sap-muted); margin-bottom: 12px; }
+  .notif-action { width: 100%; }
+
+  /* Score pulse animation */
+  @keyframes scorePop {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.35); }
+    100% { transform: scale(1); }
+  }
+  .score-pop { animation: scorePop 0.45s ease-out; }
+
+  /* Ready for legal banner */
+  #legal-ready-banner {
+    display: none;
+    align-items: center; gap: 12px;
+    margin-top: 14px; padding: 12px 16px;
+    background: var(--sap-green-bg);
+    border: 1px solid var(--sap-green);
+    border-radius: var(--radius);
+    font-size: 13px; color: var(--sap-green);
+    animation: fadeIn 0.4s ease;
+  }
+  #legal-ready-banner.show { display: flex; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .legal-banner-icon { font-size: 20px; flex-shrink: 0; }
+  .legal-banner-title { font-weight: 700; font-size: 14px; margin-bottom: 2px; }
+    .kpi-strip { grid-template-columns: repeat(2, 1fr); }
+    .form-grid  { grid-template-columns: 1fr; }
+    .review-layout { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header class="shell">
+  <img src="SAP_2011_logo.svg.png" alt="SAP" style="height:24px;display:block;">
+  <span class="shell-sep"></span>
+  <span class="shell-title"><strong>CLM AI</strong> &nbsp;Contract Lifecycle Management</span>
+  <span class="shell-spacer"></span>
+  <span class="shell-user">
+    <div class="shell-avatar">MC</div>
+    Maya Chen · Sales AE
+  </span>
+</header>
+
+<nav class="nav">
+  <div class="nav-tab active"  onclick="showPage('dashboard', this)">Dashboard <span class="nav-count red">2</span></div>
+  <div class="nav-tab"         onclick="showPage('generate',  this)">Generate Contract</div>
+  <div class="nav-tab"         onclick="showPage('review',    this)">Risk Review <span class="nav-count">1</span></div>
+</nav>
+
+<!-- ═══════════════════════════════════════ PAGE 1: DASHBOARD -->
+<div class="page active" id="dashboard">
+  <div class="page-title">My Active Deals</div>
+
+  <div class="kpi-strip">
+    <div class="kpi-card"><div class="kpi-value">3.8d</div><div class="kpi-label">Avg. Contract Cycle</div></div>
+    <div class="kpi-card"><div class="kpi-value">2</div><div class="kpi-label">Deals at Risk</div></div>
+    <div class="kpi-card"><div class="kpi-value">4</div><div class="kpi-label">Pending Signature</div></div>
+    <div class="kpi-card"><div class="kpi-value" style="color:#BB0000">£12.3M</div><div class="kpi-label">Revenue at Risk</div></div>
+  </div>
+
+  <div class="deal-row">
+    <span class="dot dot-yellow"></span>
+    <div><div class="deal-name">GlobalTech Industries</div><div class="deal-sub">S/4HANA Cloud + Services · 3 yr · Day 3 of 5</div></div>
+    <div class="deal-spacer"></div>
+    <div><div class="deal-value">£4.2M</div><div style="display:flex;justify-content:flex-end;margin-top:4px"><span class="badge badge-yellow">In Negotiation</span></div></div>
+    <div class="deal-actions">
+      <button class="btn btn-primary btn-sm" onclick="goToReview()">Review Contract</button>
+      <button class="btn btn-ghost btn-sm" onclick="toast('Reminder sent to Tom Wilson')">Send Reminder</button>
+    </div>
+  </div>
+
+  <div class="deal-row">
+    <span class="dot dot-green"></span>
+    <div><div class="deal-name">Meridian Retail Group</div><div class="deal-sub">SAP Commerce Cloud · 2 yr · Day 7</div></div>
+    <div class="deal-spacer"></div>
+    <div><div class="deal-value">£980K</div><div style="display:flex;justify-content:flex-end;margin-top:4px"><span class="badge badge-blue">Pending Signature</span></div></div>
+    <div class="deal-actions">
+      <button class="btn btn-secondary btn-sm">View</button>
+      <button class="btn btn-ghost btn-sm" onclick="toast('Reminder sent')">Send Reminder</button>
+    </div>
+  </div>
+
+  <div class="deal-row">
+    <span class="dot dot-red"></span>
+    <div><div class="deal-name">Nordbank AG</div><div class="deal-sub">SAP FS/CD + FSCM · 5 yr · Day 1</div></div>
+    <div class="deal-spacer"></div>
+    <div><div class="deal-value">£7.1M</div><div style="display:flex;justify-content:flex-end;margin-top:4px"><span class="badge badge-red">Legal Review Required</span></div></div>
+    <div class="deal-actions">
+      <button class="btn btn-secondary btn-sm">View</button>
+      <button class="btn btn-ghost btn-sm" onclick="toast('Assigned to David Park (Legal)')">Assign Legal</button>
+    </div>
+  </div>
+
+  <div class="deal-row">
+    <span class="dot dot-green"></span>
+    <div><div class="deal-name">Alpine Logistics SE</div><div class="deal-sub">SAP TM + WM · 2 yr · Signed Apr 8</div></div>
+    <div class="deal-spacer"></div>
+    <div><div class="deal-value">£1.6M</div><div style="display:flex;justify-content:flex-end;margin-top:4px"><span class="badge badge-green">Executed ✓</span></div></div>
+    <div class="deal-actions"><button class="btn btn-ghost btn-sm">View Archive</button></div>
+  </div>
+
+  <div style="margin-top:20px">
+    <button class="btn btn-primary" onclick="showPage('generate', document.querySelectorAll('.nav-tab')[1])">+ New Contract</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ PAGE 2: GENERATE -->
+<div class="page" id="generate">
+  <div class="page-title">Generate Contract</div>
+  <div class="card">
+
+    <div class="section-divider">Deal Data — from SAP Sales Cloud</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Customer Name <span class="input-tag">SAP CRM</span></label>
+        <input id="f-customer"  value="GlobalTech Industries" />
+      </div>
+      <div class="form-group">
+        <label>Opportunity ID <span class="input-tag">SAP CRM</span></label>
+        <input id="f-opp"       value="OPP-2026-04821" />
+      </div>
+      <div class="form-group">
+        <label>Deal Value (£) <span class="input-tag">S/4HANA Pricing</span></label>
+        <input id="f-value"     value="4,200,000" />
+      </div>
+      <div class="form-group">
+        <label>Contract Duration</label>
+        <select id="f-duration">
+          <option>3 Years</option><option>1 Year</option><option>2 Years</option><option>5 Years</option>
+        </select>
+      </div>
+      <div class="form-group full">
+        <label>Products / Services</label>
+        <input id="f-products" value="S/4HANA Cloud Professional Edition (2,400 users), SAP Premium Services Pack" />
+      </div>
+    </div>
+
+    <div class="section-divider">Contract Parameters</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Primary Jurisdiction</label>
+        <select id="f-jurisdiction">
+          <option>United Kingdom</option><option>Germany (EU)</option><option>United States</option><option>Singapore (APAC)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Customer Industry</label>
+        <select id="f-industry">
+          <option>Manufacturing</option><option>Financial Services</option><option>Retail</option><option>Public Sector</option><option>Life Sciences</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Payment Terms</label>
+        <select id="f-payment">
+          <option>Net 90 / Deferred Year 1 (50/50)</option><option>Net 30</option><option>Net 60</option><option>Annual in Advance</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>SLA Commitment</label>
+        <select id="f-sla">
+          <option>99.95% Uptime</option><option>99.9% Uptime</option><option>99.5% Uptime</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="section-divider">Compliance</div>
+    <div style="display:flex;gap:20px;flex-wrap:wrap;font-size:13px;">
+      <label style="display:flex;align-items:center;gap:6px;font-weight:400;cursor:pointer;"><input type="checkbox" id="c-gdpr"  checked> GDPR / DPA (EU)</label>
+      <label style="display:flex;align-items:center;gap:6px;font-weight:400;cursor:pointer;"><input type="checkbox" id="c-soc2"  checked> SOC 2 Annex</label>
+      <label style="display:flex;align-items:center;gap:6px;font-weight:400;cursor:pointer;"><input type="checkbox" id="c-ifrs"  checked> IFRS 15 Rev. Rec.</label>
+      <label style="display:flex;align-items:center;gap:6px;font-weight:400;cursor:pointer;"><input type="checkbox" id="c-ofac"> Export Control Screening</label>
+    </div>
+
+    <div class="ai-box" id="ai-pre-analysis" style="margin-top:16px">
+      <strong>⚡ AI Pre-analysis:</strong> Deferred payment in Year 1 detected — Revenue Recognition Annex (IFRS 15) recommended. Multi-jurisdiction deployment triggers Multi-DPA requirement. Template: <strong>Enterprise SaaS + Services</strong>.
+    </div>
+
+    <div style="margin-top:20px;display:flex;gap:10px;align-items:center;">
+      <button class="btn btn-primary" id="gen-btn" onclick="generateContract()">⚡ Generate Contract</button>
+      <button class="btn btn-ghost" onclick="showPage('dashboard', document.querySelectorAll('.nav-tab')[0])">Cancel</button>
+    </div>
+
+    <div class="generating" id="gen-progress">
+      <div class="spinner"></div>
+      <span id="gen-status">Reading deal data from SAP Sales Cloud…</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ PAGE 3: REVIEW -->
+<div class="page" id="review">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+    <div>
+      <div class="page-title" style="margin-bottom:2px">Contract Review — <span id="rv-customer">GlobalTech Industries</span></div>
+      <div style="font-size:13px;color:var(--sap-muted)" id="rv-meta">OPP-2026-04821 · £4.2M · Generated today</div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-ghost btn-sm">⬇ Download</button>
+      <button class="btn btn-secondary btn-sm" onclick="toast('📤 Secure portal link sent to customer')">📤 Send to Customer</button>
+      <button class="btn btn-primary btn-sm"   onclick="toast('📨 Approval request sent to David Park (Legal)')">✓ Request Approval</button>
+    </div>
+  </div>
+
+  <div class="review-layout">
+    <!-- Left -->
+    <div>
+      <div class="card" style="padding:8px;">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--sap-muted);padding:8px 12px 4px">Sections</div>
+        <div class="clause-list" id="clause-list"></div>
+      </div>
+
+      <div class="risk-summary">
+        <div>
+          <div class="risk-score-num yellow" id="overall-score">—</div>
+          <div style="font-size:11px;color:var(--sap-muted)">Overall Risk</div>
+        </div>
+        <div style="flex:1;margin-left:8px;">
+          <div style="font-size:13px;font-weight:600;" id="overall-label">Analysing…</div>
+          <div style="font-size:12px;color:var(--sap-muted)" id="overall-sub"></div>
+        </div>
+      </div>
+
+      <div style="margin-top:16px;">
+        <div class="section-divider" style="margin-top:0">Approval Chain</div>
+        <div class="approval-steps">
+          <div class="approval-step">
+            <div style="font-size:18px;min-width:28px;text-align:center">✅</div>
+            <div><div class="approval-name">Maya Chen</div><div class="approval-role">Sales AE · Auto-approved</div></div>
+          </div>
+          <div class="approval-step" style="border-color:var(--sap-yellow)">
+            <div style="font-size:18px;min-width:28px;text-align:center">⏳</div>
+            <div><div class="approval-name">David Park</div><div class="approval-role">Legal Counsel · Pending</div></div>
+          </div>
+          <div class="approval-step" style="opacity:0.5">
+            <div style="font-size:18px;min-width:28px;text-align:center">○</div>
+            <div><div class="approval-name">Priya Mehta</div><div class="approval-role">Deal Desk · Waiting</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ready for legal banner -->
+      <div id="legal-ready-banner">
+        <div class="legal-banner-icon">✅</div>
+        <div>
+          <div class="legal-banner-title">Ready for Legal Review</div>
+          All high-risk clauses resolved. David Park can complete review in ~10 minutes.
+        </div>
+      </div>
+    </div>
+
+    <!-- Right -->
+    <div class="card" id="clause-detail">
+      <div class="thinking"><div class="spinner"></div> Generating contract with AI…</div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- Notification popup — Joule -->
+<div id="notif">
+  <div class="notif-header">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="joule-avatar">✦</div>
+      <div>
+        <div class="joule-label">SAP Joule</div>
+        <div class="joule-name">Your AI Assistant</div>
+      </div>
+    </div>
+    <button class="notif-close" onclick="dismissNotif()">✕</button>
+  </div>
+  <div style="height:1px;background:var(--sap-border);margin-bottom:12px;"></div>
+  <div class="notif-body">
+    Hi Maya 👋 — the <strong>GlobalTech Industries</strong> contract has been waiting for your review for <strong>3 days</strong>. The customer deadline is <strong>Apr 15</strong>. I've spotted a high-risk clause that needs your attention.
+  </div>
+  <div class="notif-meta">Deal value: £4.2M &nbsp;·&nbsp; 1 high-risk clause &nbsp;·&nbsp; 2 days remaining</div>
+  <button class="btn btn-primary btn-sm notif-action" onclick="dismissNotif(); goToReview()">Review Contract Now →</button>
+</div>
+
+<script>
+// ── State ────────────────────────────────────────────────────────
+let CLAUSES = [];        // filled after AI generation
+let activeClause = 0;
+let dealData = {};
+
+// ── Navigation ───────────────────────────────────────────────────
+function showPage(id, tabEl) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  tabEl.classList.add('active');
+}
+
+function goToReview() {
+  // Use saved deal data if available, else defaults
+  if (CLAUSES.length === 0) {
+    dealData = {
+      customer: 'GlobalTech Industries',
+      opp: 'OPP-2026-04821',
+      value: '£4,200,000',
+      duration: '3 Years',
+      products: 'S/4HANA Cloud Professional Edition (2,400 users), SAP Premium Services Pack',
+      jurisdiction: 'United Kingdom',
+      industry: 'Manufacturing',
+      payment: 'Net 90 / Deferred Year 1 (50/50)',
+      sla: '99.95% Uptime',
+      compliance: ['GDPR / DPA', 'SOC 2 Annex', 'IFRS 15']
+    };
+    showPage('review', document.querySelectorAll('.nav-tab')[2]);
+    generateClausesWithAI();
+  } else {
+    showPage('review', document.querySelectorAll('.nav-tab')[2]);
+  }
+}
+
+// ── API helper ───────────────────────────────────────────────────
+async function callLLM(systemPrompt, userMessage, json = false) {
+  const res = await fetch('/api/llm', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ systemPrompt, userMessage, model: 'flash', json })
+  });
+  if (!res.ok) throw new Error(`Server error ${res.status}`);
+  const data = await res.json();
+  if (data.error) throw new Error(data.error);
+  return data.result;
+}
+
+// ── Generate Contract (page 2 button) ───────────────────────────
+async function generateContract() {
+  dealData = {
+    customer:     document.getElementById('f-customer').value,
+    opp:          document.getElementById('f-opp').value,
+    value:        '£' + document.getElementById('f-value').value,
+    duration:     document.getElementById('f-duration').value,
+    products:     document.getElementById('f-products').value,
+    jurisdiction: document.getElementById('f-jurisdiction').value,
+    industry:     document.getElementById('f-industry').value,
+    payment:      document.getElementById('f-payment').value,
+    sla:          document.getElementById('f-sla').value,
+    compliance:   [
+      document.getElementById('c-gdpr').checked ? 'GDPR / DPA' : null,
+      document.getElementById('c-soc2').checked ? 'SOC 2 Annex' : null,
+      document.getElementById('c-ifrs').checked ? 'IFRS 15' : null,
+      document.getElementById('c-ofac').checked ? 'Export Control' : null,
+    ].filter(Boolean)
+  };
+
+  const btn = document.getElementById('gen-btn');
+  btn.disabled = true;
+  const progress = document.getElementById('gen-progress');
+  const statusEl = document.getElementById('gen-status');
+  progress.classList.add('show');
+
+  const steps = [
+    [0,    'Reading deal data from SAP Sales Cloud…'],
+    [800,  'Validating pricing against S/4HANA condition records…'],
+    [1600, 'Running OFAC & sanctions screening…'],
+    [2400, 'Selecting contract template…'],
+    [3200, 'Generating contract clauses with AI…'],
+  ];
+  steps.forEach(([d, msg]) => setTimeout(() => statusEl.textContent = msg, d));
+
+  try {
+    CLAUSES = [];
+    showPage('review', document.querySelectorAll('.nav-tab')[2]);
+    document.getElementById('rv-customer').textContent = dealData.customer;
+    document.getElementById('rv-meta').textContent = `${dealData.opp} · ${dealData.value} · Generated just now`;
+    document.getElementById('clause-list').innerHTML = '';
+    document.getElementById('clause-detail').innerHTML = '<div class="thinking"><div class="spinner"></div> Generating contract with AI…</div>';
+
+    await generateClausesWithAI();
+
+  } catch (err) {
+    toast('❌ Error: ' + err.message);
+  } finally {
+    progress.classList.remove('show');
+    btn.disabled = false;
+    btn.textContent = '⚡ Generate Contract';
+  }
+}
+
+// ── Core AI clause generation ────────────────────────────────────
+async function generateClausesWithAI() {
+  const deal = dealData.customer ? dealData : {
+    customer: 'GlobalTech Industries', opp: 'OPP-2026-04821', value: '£4,200,000',
+    duration: '3 Years', products: 'S/4HANA Cloud Professional Edition (2,400 users), SAP Premium Services Pack',
+    jurisdiction: 'Germany (EU)', industry: 'Manufacturing',
+    payment: 'Net 90 / Deferred Year 1 (50/50)', sla: '99.95% Uptime',
+    compliance: ['GDPR / DPA', 'SOC 2 Annex', 'IFRS 15']
+  };
+
+  document.getElementById('rv-customer').textContent = deal.customer;
+
+  const systemPrompt = `You are an expert SAP enterprise software legal contract AI.
+You generate structured contract clause analysis for SAP software deals.
+Always respond with valid JSON only — no markdown, no code fences, just raw JSON.`;
+
+  const userMessage = `Generate a contract clause analysis for this SAP enterprise deal:
+
+Customer: ${deal.customer}
+Opportunity: ${deal.opp}
+Deal Value: ${deal.value}
+Duration: ${deal.duration}
+Products: ${deal.products}
+Jurisdiction: ${deal.jurisdiction}
+Industry: ${deal.industry}
+Payment Terms: ${deal.payment}
+SLA: ${deal.sla}
+Compliance Requirements: ${(deal.compliance||[]).join(', ')}
+
+Return a JSON array of exactly 7 contract clauses. Each clause object must have:
+- "num": section number like "§ 1"
+- "title": clause title (e.g. "License Grant")
+- "risk": one of "green", "yellow", or "red"
+- "text": the actual contract clause text (2-4 sentences, realistic legal language)
+- "risk_title": short risk summary starting with ✅, ⚠️, or 🔴 and a score like "Score: X.X/10"
+- "risk_body": 2-3 sentences explaining the risk assessment
+- "recommendation": null if green, otherwise a string with specific recommended action or counter-proposal language
+- "precedents": array of 0-2 objects with "icon" (✅, ⚠️, or ❌) and "text" (one sentence about a similar past deal)
+
+Include these sections: Definitions, License Grant, Payment Terms, SLA & Uptime, Liability Cap, Data Protection, Term & Termination.
+Make at least one clause RED (high risk) and two YELLOW (medium risk).
+The Liability Cap clause should be RED — the customer is requesting uncapped liability for data breaches.`;
+
+  try {
+    document.getElementById('clause-detail').innerHTML = '<div class="thinking"><div class="spinner"></div> AI is analysing deal and generating clauses…</div>';
+
+    const raw = await callLLM(systemPrompt, userMessage, true);
+
+    // Parse — handle possible markdown wrapping
+    let parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      const match = raw.match(/\[[\s\S]*\]/);
+      if (match) parsed = JSON.parse(match[0]);
+      else throw new Error('Could not parse AI response as JSON');
+    }
+
+    CLAUSES = parsed;
+    activeClause = CLAUSES.findIndex(c => c.risk === 'red');
+    if (activeClause < 0) activeClause = 0;
+
+    renderClauseList();
+    renderClauseDetail(activeClause);
+    updateOverallRisk();
+    toast('✅ Contract generated — ' + CLAUSES.length + ' clauses analysed');
+
+  } catch (err) {
+    document.getElementById('clause-detail').innerHTML = `<div style="color:var(--sap-red);padding:16px">❌ AI generation failed: ${err.message}<br><br><button class="btn btn-secondary btn-sm" onclick="generateClausesWithAI()">Retry</button></div>`;
+    toast('❌ AI error: ' + err.message);
+  }
+}
+
+// ── Render clause list ───────────────────────────────────────────
+function renderClauseList() {
+  document.getElementById('clause-list').innerHTML = CLAUSES.map((c, i) => `
+    <div class="clause-item ${i === activeClause ? 'active' : ''}" onclick="selectClause(${i})">
+      <span class="clause-num">${c.num}</span>
+      <span style="flex:1">${c.title}</span>
+      <span class="dot dot-${c.risk}"></span>
+    </div>
+  `).join('');
+}
+
+// ── Render clause detail ─────────────────────────────────────────
+function renderClauseDetail(i) {
+  const c = CLAUSES[i];
+  if (!c) return;
+
+  const recHtml = c.recommendation ? `
+    <div class="recommendation-box">
+      <h4>⚡ AI Recommendation</h4>
+      <div class="rec-text">${c.recommendation}</div>
+      <div class="clause-actions">
+        ${c.risk === 'red'
+          ? `<button class="btn btn-primary btn-sm" onclick="acceptCounter(${i})">Accept AI Counter-Proposal</button>
+             <button class="btn btn-secondary btn-sm" onclick="askAI(${i})">Ask AI to Redraft</button>
+             <button class="btn btn-danger btn-sm" onclick="toast('🔴 Escalated to Chief Legal Officer')">Escalate to CLO</button>`
+          : `<button class="btn btn-primary btn-sm" onclick="applyRec(${i})">Apply Recommendation</button>
+             <button class="btn btn-ghost btn-sm" onclick="askAI(${i})">Ask AI to Redraft</button>`
+        }
+      </div>
+    </div>` : '';
+
+  const precedentsHtml = c.precedents && c.precedents.length ? `
+    <div style="margin-top:12px;">
+      <div style="font-size:12px;font-weight:700;color:var(--sap-muted);text-transform:uppercase;margin-bottom:8px;">Similar Deals</div>
+      ${c.precedents.map(p => `
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px;padding:6px 0;border-bottom:1px solid var(--sap-border);">
+          <span>${p.icon}</span><span>${p.text}</span>
+        </div>`).join('')}
+    </div>` : '';
+
+  document.getElementById('clause-detail').innerHTML = `
+    <div class="clause-panel-title">${c.num} — ${c.title}</div>
+    <div class="clause-panel-sub">Contract section · Click "Ask AI to Redraft" to get alternative language</div>
+    <div class="clause-text">${c.text}</div>
+    <div class="risk-panel ${c.risk}">
+      <div class="risk-panel-title">${c.risk_title}</div>
+      ${c.risk_body}
+    </div>
+    ${recHtml}
+    ${precedentsHtml}
+    <div id="ai-redraft-area"></div>
+  `;
+}
+
+function selectClause(i) {
+  activeClause = i;
+  renderClauseList();
+  renderClauseDetail(i);
+}
+
+// ── AI actions ───────────────────────────────────────────────────
+function acceptCounter(i) {
+  CLAUSES[i].risk = 'yellow';
+  CLAUSES[i].risk_title = CLAUSES[i].risk_title.replace('🔴 High Risk', '⚠️ Medium Risk (Counter-proposal applied)');
+  CLAUSES[i].risk_body = 'AI counter-proposal accepted. Liability capped at 50% ACV with gross negligence carve-out. Risk reduced from High to Medium. Updated clause sent to customer portal.';
+  CLAUSES[i].recommendation = null;
+  renderClauseList();
+  renderClauseDetail(i);
+  updateOverallRisk(true);
+  toast('✅ Counter-proposal applied — contract ready for Legal');
+}
+
+function applyRec(i) {
+  CLAUSES[i].risk = 'green';
+  CLAUSES[i].risk_title = CLAUSES[i].risk_title.replace('⚠️ Medium Risk', '✅ Low Risk (Recommendation applied)');
+  CLAUSES[i].recommendation = null;
+  renderClauseList();
+  renderClauseDetail(i);
+  updateOverallRisk();
+  toast('✅ Recommendation applied');
+}
+
+async function askAI(i) {
+  const c = CLAUSES[i];
+  const area = document.getElementById('ai-redraft-area');
+  area.innerHTML = '<div class="thinking"><div class="spinner"></div> AI is redrafting this clause…</div>';
+
+  try {
+    const result = await callLLM(
+      'You are an expert SAP enterprise contract lawyer. Redraft contract clauses to reduce legal risk while remaining commercially reasonable. Be concise and use plain professional legal language.',
+      `Redraft this contract clause to reduce risk for SAP while keeping it fair to the customer:\n\nClause: ${c.title}\nCurrent text: ${c.text}\nRisk issue: ${c.risk_body}\n\nProvide only the redrafted clause text, no explanation.`
+    );
+
+    area.innerHTML = `
+      <div class="recommendation-box" style="margin-top:12px">
+        <h4>✏️ AI Redraft</h4>
+        <div class="rec-text">${result}</div>
+        <div class="clause-actions">
+          <button class="btn btn-primary btn-sm" onclick="applyRedraft(${i}, this)">Apply Redraft</button>
+          <button class="btn btn-ghost btn-sm" onclick="this.closest('.recommendation-box').remove()">Dismiss</button>
+        </div>
+      </div>`;
+  } catch (err) {
+    area.innerHTML = `<div style="color:var(--sap-red);font-size:13px;margin-top:8px">❌ ${err.message}</div>`;
+  }
+}
+
+function applyRedraft(i, btn) {
+  const redraftText = btn.closest('.recommendation-box').querySelector('.rec-text').textContent;
+  CLAUSES[i].text = redraftText;
+  CLAUSES[i].risk = 'green';
+  CLAUSES[i].risk_title = '✅ Low Risk — Redrafted by AI';
+  CLAUSES[i].risk_body = 'Clause redrafted by AI to reduce risk. Review and confirm before sending to customer.';
+  CLAUSES[i].recommendation = null;
+  renderClauseList();
+  renderClauseDetail(i);
+  updateOverallRisk();
+  toast('✅ Redraft applied to clause');
+}
+
+// ── Overall risk score ───────────────────────────────────────────
+function updateOverallRisk(animate = false) {
+  const scores = { green: 1.5, yellow: 4.5, red: 8.5 };
+  const avg = CLAUSES.reduce((s, c) => s + scores[c.risk], 0) / CLAUSES.length;
+  const el = document.getElementById('overall-score');
+
+  // Animate the score number counting down
+  if (animate) {
+    const from = parseFloat(el.textContent) || avg + 2;
+    const to   = avg;
+    const steps = 30;
+    let step = 0;
+    const interval = setInterval(() => {
+      step++;
+      const val = from + (to - from) * (step / steps);
+      el.textContent = val.toFixed(1);
+      if (step >= steps) clearInterval(interval);
+    }, 20);
+    el.classList.remove('score-pop');
+    void el.offsetWidth; // reflow to restart animation
+    el.classList.add('score-pop');
+  } else {
+    el.textContent = avg.toFixed(1);
+  }
+
+  const labelEl = document.getElementById('overall-label');
+  const subEl   = document.getElementById('overall-sub');
+  const hasRed  = CLAUSES.some(c => c.risk === 'red');
+
+  if (avg >= 6) {
+    el.className = 'risk-score-num red' + (animate ? ' score-pop' : '');
+    labelEl.textContent = 'High Risk';
+    subEl.textContent = 'Chief Legal Officer review required';
+  } else if (avg >= 3) {
+    el.className = 'risk-score-num yellow' + (animate ? ' score-pop' : '');
+    labelEl.textContent = 'Medium Risk';
+    subEl.textContent = 'Legal approval required';
+  } else {
+    el.className = 'risk-score-num green' + (animate ? ' score-pop' : '');
+    labelEl.textContent = 'Low Risk';
+    subEl.textContent = 'Standard approval workflow';
+  }
+
+  // Show "ready for legal" banner when no red clauses remain
+  if (!hasRed && animate) {
+    setTimeout(() => {
+      document.getElementById('legal-ready-banner').classList.add('show');
+    }, 700);
+  }
+}
+
+// ── Notification ─────────────────────────────────────────────────
+function dismissNotif() {
+  document.getElementById('notif').classList.remove('show');
+}
+setTimeout(() => document.getElementById('notif').classList.add('show'), 20000);
+
+// ── Toast ────────────────────────────────────────────────────────
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3500);
+}
+</script>
+</body>
+</html>
